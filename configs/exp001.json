@@ -1,0 +1,17 @@
+{
+  "experiment_id": "BG-EXP-001",
+  "seeds": [1129, 2213, 3469, 4561, 5801],
+  "n_structures": {"train": 120, "development": 50, "test": 60},
+  "n_loads": {"train": 24, "development": 32, "test": 128},
+  "base_stiffness": [2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.65, 0.65, 0.65, 0.65, 0.4],
+  "log_stiffness_global_sd": 0.35,
+  "log_stiffness_edge_sd": 0.55,
+  "load_node_sd": [0.4, 0.5, 0.6, 0.7, 0.9, 1.0],
+  "load_common_sd": 0.35,
+  "mahalanobis_ridge_ratios": [0.000001, 0.001, 0.1, 1.0, 10.0],
+  "fit_pair_count": 4096,
+  "neighbor_k": 5,
+  "bootstrap_replicates": 600,
+  "bootstrap_seed": 80117,
+  "meaningful_spearman_gain": 0.02
+}

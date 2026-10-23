@@ -1,0 +1,14 @@
+{
+  "decision": "NOT_SUPPORTED",
+  "mean_difference": -0.011464505439568496,
+  "numerical_checks": "5 passed",
+  "primary_interval": [
+    -0.015727607394354144,
+    -0.008770761149684853
+  ],
+  "selected_baseline": "direct_response_profile",
+  "split_file_sha256_equal": true,
+  "status": "matched",
+  "temporary_copy": "/tmp/bg-exp-001-repro-btplouxc",
+  "tests": "11 passed"
+}

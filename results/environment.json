@@ -1,0 +1,9 @@
+{
+  "blas_threads": 1,
+  "execution_note": "Scientific dependencies were read from an existing local Python environment because package-index DNS was unavailable. All experiment artifacts and writes remained in this workspace. requirements.txt pins the dependency versions for reproduction.",
+  "matplotlib": "3.10.9",
+  "numpy": "2.4.4",
+  "platform": "Linux-6.17.0-41-generic-x86_64-with-glibc2.42",
+  "pytest": "9.0.3",
+  "python": "3.12.12"
+}

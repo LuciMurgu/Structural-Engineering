@@ -1,0 +1,446 @@
+{
+  "decision": "NOT_SUPPORTED",
+  "experiment_id": "BG-EXP-001",
+  "local_minus_scrambled_control_mean_spearman": 0.5794180810743215,
+  "mean_scores": {
+    "direct_response_profile": {
+      "precision_at_k": 0.9139999999999999,
+      "spearman": 0.9983380738480043
+    },
+    "euclidean": {
+      "precision_at_k": 0.29399999999999993,
+      "spearman": 0.46869524674447166
+    },
+    "global_mahalanobis": {
+      "precision_at_k": 0.38133333333333336,
+      "spearman": 0.7612717764341091
+    },
+    "global_sensitivity": {
+      "precision_at_k": 0.692,
+      "spearman": 0.8855725630759675
+    },
+    "local_jacobian_pullback": {
+      "precision_at_k": 0.8239999999999998,
+      "spearman": 0.9868735684084358
+    },
+    "permuted_target_mahalanobis": {
+      "precision_at_k": 0.2633333333333333,
+      "spearman": 0.41560111815211
+    },
+    "scrambled_local_pullback": {
+      "precision_at_k": 0.15533333333333332,
+      "spearman": 0.40745548733411435
+    },
+    "scrambled_response_profile": {
+      "precision_at_k": 0.15466666666666667,
+      "spearman": 0.4026452062667187
+    },
+    "standardized_euclidean": {
+      "precision_at_k": 0.2859999999999999,
+      "spearman": 0.4675805968870301
+    }
+  },
+  "primary_mean_local_minus_baseline_spearman": -0.011464505439568496,
+  "primary_per_seed_differences": [
+    -0.007055969783247518,
+    -0.012876822090609252,
+    -0.014486014499344835,
+    -0.011290375712610268,
+    -0.011613345112030604
+  ],
+  "selected_simple_baseline": "direct_response_profile",
+  "test_seed_summaries": [
+    {
+      "scores": {
+        "direct_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.94,
+          "spearman": 0.998276045199291
+        },
+        "euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.25666666666666665,
+          "spearman": 0.4219083195922923
+        },
+        "global_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.26999999999999996,
+          "spearman": 0.6752069319929874
+        },
+        "global_sensitivity": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.7333333333333333,
+          "spearman": 0.906345998127115
+        },
+        "local_jacobian_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.8433333333333333,
+          "spearman": 0.9912200754160435
+        },
+        "permuted_target_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.28666666666666674,
+          "spearman": 0.5732039293156762
+        },
+        "scrambled_local_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.11333333333333334,
+          "spearman": 0.3502068839787588
+        },
+        "scrambled_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.12333333333333335,
+          "spearman": 0.3400760710928911
+        },
+        "standardized_euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.24999999999999997,
+          "spearman": 0.3902512613527209
+        }
+      },
+      "seed": 1129,
+      "timing_seconds": {
+        "direct_response_profile": 0.004901213003904559,
+        "euclidean": 0.0001982810063054785,
+        "global_mahalanobis": 0.000368066001101397,
+        "global_sensitivity": 0.000299202001770027,
+        "local_jacobian_pullback": 0.005486557012773119,
+        "scrambled_local_pullback": 0.006413845010683872,
+        "scrambled_response_profile": 0.0029243430035421625,
+        "stability": {
+          "max_stiffness_condition": 59.354539364646435,
+          "min_stiffness_eigenvalue": 0.0928719104737579,
+          "min_tensor_eigenvalue": 5.5585583117695186e-05
+        },
+        "standardized_euclidean": 9.142298949882388e-05
+      }
+    },
+    {
+      "scores": {
+        "direct_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.9166666666666665,
+          "spearman": 0.9992148734977099
+        },
+        "euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.2933333333333333,
+          "spearman": 0.4841513211343578
+        },
+        "global_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.4033333333333333,
+          "spearman": 0.7600124833748366
+        },
+        "global_sensitivity": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.6866666666666668,
+          "spearman": 0.8796519004672777
+        },
+        "local_jacobian_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.8466666666666666,
+          "spearman": 0.9863380514071006
+        },
+        "permuted_target_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.25999999999999995,
+          "spearman": 0.4021773746664844
+        },
+        "scrambled_local_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.18,
+          "spearman": 0.4180268504330702
+        },
+        "scrambled_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.15666666666666665,
+          "spearman": 0.4047111972281091
+        },
+        "standardized_euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.2866666666666667,
+          "spearman": 0.5036321895633556
+        }
+      },
+      "seed": 2213,
+      "timing_seconds": {
+        "direct_response_profile": 0.0025349049974465743,
+        "euclidean": 8.31119978101924e-05,
+        "global_mahalanobis": 0.0002932650095317513,
+        "global_sensitivity": 0.00028376698901411146,
+        "local_jacobian_pullback": 0.004965328000253066,
+        "scrambled_local_pullback": 0.005015194998122752,
+        "scrambled_response_profile": 0.0023603709996677935,
+        "stability": {
+          "max_stiffness_condition": 68.90778894520706,
+          "min_stiffness_eigenvalue": 0.06897206663117524,
+          "min_tensor_eigenvalue": 3.503165405900386e-05
+        },
+        "standardized_euclidean": 8.073699427768588e-05
+      }
+    },
+    {
+      "scores": {
+        "direct_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.8699999999999998,
+          "spearman": 0.9969121229954553
+        },
+        "euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.25,
+          "spearman": 0.44259918337075366
+        },
+        "global_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.3966666666666666,
+          "spearman": 0.7857328470683088
+        },
+        "global_sensitivity": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.6566666666666666,
+          "spearman": 0.8764253053519645
+        },
+        "local_jacobian_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.7899999999999999,
+          "spearman": 0.9824261084961105
+        },
+        "permuted_target_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.18666666666666665,
+          "spearman": 0.31677343669580393
+        },
+        "scrambled_local_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.18333333333333326,
+          "spearman": 0.42618351949229716
+        },
+        "scrambled_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.19666666666666663,
+          "spearman": 0.4295327778423408
+        },
+        "standardized_euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.24999999999999997,
+          "spearman": 0.4716731810658868
+        }
+      },
+      "seed": 3469,
+      "timing_seconds": {
+        "direct_response_profile": 0.0037174649914959446,
+        "euclidean": 9.142300405073911e-05,
+        "global_mahalanobis": 0.0002932659990619868,
+        "global_sensitivity": 0.0003027640050277114,
+        "local_jacobian_pullback": 0.00495701699401252,
+        "scrambled_local_pullback": 0.004941581995808519,
+        "scrambled_response_profile": 0.002368681991356425,
+        "stability": {
+          "max_stiffness_condition": 70.46088015691132,
+          "min_stiffness_eigenvalue": 0.08573123681277621,
+          "min_tensor_eigenvalue": 3.8211629822765336e-05
+        },
+        "standardized_euclidean": 7.48009915696457e-05
+      }
+    },
+    {
+      "scores": {
+        "direct_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.9166666666666666,
+          "spearman": 0.9990035827595236
+        },
+        "euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.37,
+          "spearman": 0.5224800189260999
+        },
+        "global_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.38666666666666666,
+          "spearman": 0.7837461086361226
+        },
+        "global_sensitivity": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.7166666666666665,
+          "spearman": 0.866253263527119
+        },
+        "local_jacobian_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.8466666666666665,
+          "spearman": 0.9877132070469133
+        },
+        "permuted_target_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.33666666666666667,
+          "spearman": 0.49277857183243196
+        },
+        "scrambled_local_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.17333333333333334,
+          "spearman": 0.47136580776993137
+        },
+        "scrambled_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.18333333333333332,
+          "spearman": 0.46711803035127897
+        },
+        "standardized_euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.3533333333333333,
+          "spearman": 0.5079627559552643
+        }
+      },
+      "seed": 4561,
+      "timing_seconds": {
+        "direct_response_profile": 0.0037649580044671893,
+        "euclidean": 8.548599726054817e-05,
+        "global_mahalanobis": 0.00030395099020097405,
+        "global_sensitivity": 0.00028495400329120457,
+        "local_jacobian_pullback": 0.004973638991941698,
+        "scrambled_local_pullback": 0.00493802000710275,
+        "scrambled_response_profile": 0.002368681991356425,
+        "stability": {
+          "max_stiffness_condition": 68.57765642241772,
+          "min_stiffness_eigenvalue": 0.08328077560955098,
+          "min_tensor_eigenvalue": 0.0001888147694135692
+        },
+        "standardized_euclidean": 8.667299698572606e-05
+      }
+    },
+    {
+      "scores": {
+        "direct_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.9266666666666664,
+          "spearman": 0.9982837447880419
+        },
+        "euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.29999999999999993,
+          "spearman": 0.4723373906988546
+        },
+        "global_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.45000000000000007,
+          "spearman": 0.8016605110982902
+        },
+        "global_sensitivity": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.6666666666666666,
+          "spearman": 0.8991863479063613
+        },
+        "local_jacobian_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.7933333333333333,
+          "spearman": 0.9866703996760113
+        },
+        "permuted_target_mahalanobis": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.24666666666666665,
+          "spearman": 0.2930722782501533
+        },
+        "scrambled_local_pullback": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.12666666666666668,
+          "spearman": 0.3714943749965139
+        },
+        "scrambled_response_profile": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.11333333333333334,
+          "spearman": 0.37178795481897337
+        },
+        "standardized_euclidean": {
+          "nonfinite_count": 0,
+          "precision_at_k": 0.2899999999999999,
+          "spearman": 0.46438359649792277
+        }
+      },
+      "seed": 5801,
+      "timing_seconds": {
+        "direct_response_profile": 0.0037661459937226027,
+        "euclidean": 8.667299698572606e-05,
+        "global_mahalanobis": 0.00029682699823752046,
+        "global_sensitivity": 0.0002944529987871647,
+        "local_jacobian_pullback": 0.0049249589937971905,
+        "scrambled_local_pullback": 0.005230098002357408,
+        "scrambled_response_profile": 0.002374618998146616,
+        "stability": {
+          "max_stiffness_condition": 63.9824094663831,
+          "min_stiffness_eigenvalue": 0.10451294846970689,
+          "min_tensor_eigenvalue": 5.1493097728507215e-05
+        },
+        "standardized_euclidean": 7.242499850690365e-05
+      }
+    }
+  ],
+  "uncertainty": {
+    "local_minus_selected_baseline_spearman_95pct": [
+      -0.015727607394354144,
+      -0.008770761149684853
+    ],
+    "method_precision_at_k_95pct": {
+      "direct_response_profile": [
+        0.8913333333333332,
+        0.9339999999999999
+      ],
+      "euclidean": [
+        0.25333333333333335,
+        0.34335000000000004
+      ],
+      "global_mahalanobis": [
+        0.30865,
+        0.43535
+      ],
+      "global_sensitivity": [
+        0.6613000000000001,
+        0.7273333333333334
+      ],
+      "local_jacobian_pullback": [
+        0.796,
+        0.8506666666666666
+      ],
+      "scrambled_local_pullback": [
+        0.122,
+        0.18668333333333337
+      ],
+      "standardized_euclidean": [
+        0.25,
+        0.33069999999999994
+      ]
+    },
+    "method_spearman_95pct": {
+      "direct_response_profile": [
+        0.9971500157225046,
+        0.9989346667352481
+      ],
+      "euclidean": [
+        0.41246977819310005,
+        0.5291275837438878
+      ],
+      "global_mahalanobis": [
+        0.7029207699554577,
+        0.8075959076920526
+      ],
+      "global_sensitivity": [
+        0.8681964060598587,
+        0.906788670095718
+      ],
+      "local_jacobian_pullback": [
+        0.9818702782386073,
+        0.9896658060164762
+      ],
+      "scrambled_local_pullback": [
+        0.31188579296110747,
+        0.48435675630366637
+      ],
+      "standardized_euclidean": [
+        0.40551426954241215,
+        0.5324685475458838
+      ]
+    },
+    "resampling": "hierarchical: sample seeds, then structures within each seed; pair weight=count_i*count_j; weighted midranks"
+  }
+}

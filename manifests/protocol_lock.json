@@ -1,0 +1,22 @@
+{
+  "frozen_at_utc": "2026-10-23T10:00:36.862751+00:00",
+  "sha256": {
+    "configs/exp001.json": "b254c4ebeedf8c6d11d106a5fe0ccdd91b66d1cf506c0d94d65b21a27b692e30",
+    "manifests/PROTOCOL.md": "fe87c56bb633104a622a65c013c68a490d70d3f21d193d75d63c899b8258e480",
+    "manifests/splits.json": "402ba03f8fc7d20315a9be03007473bc899654a020fecc9d3d12845848a4b65d",
+    "pyproject.toml": "c1bb4b493d730b4856f6b45c269b5de0b2d791c0b2877e4b5db5bc2baf21ae60",
+    "references/Geometry_That_Understands_Behavior_extracted.txt": "3280a4bb8682d79022978448564df9489c2a7babae107c560ddf1a8816dad019",
+    "requirements.txt": "f414de6c1e72af7fb900dec73fd6f9d9ba5296bfd4a8b564f446455005723705",
+    "results/development.json": "5ada66893a6d9c0f1626f4f55260d9fb6b79fd6d3e5fb90dc33854492b8cc36d",
+    "scripts/monograph_checks.py": "32ceac1632c333e2b0b690f2c770da7073b14c8689ee0da0f1b2ccc679e4cc8d",
+    "scripts/run_experiment.py": "56fd98a01cd9ce29ea7575f263e93781ce81c7fd2cc8e4682f91473e7aceaa5a",
+    "src/bg_exp001/data.py": "9f9bd699f0b05bb315edc4fe2e9f773bca2424128cd7e1104bb7ac292d8a100c",
+    "src/bg_exp001/evaluation.py": "31161c5b206df8ad4e9cd53896700b838e2d20f72a6ba0e8a5855689cb354157",
+    "src/bg_exp001/mechanics.py": "8a9971be1955fb73143664be96ff97e3bfe856a548f3fd4f68ee5588954f2a64",
+    "src/bg_exp001/metrics.py": "337628634fbde88201b5ab399c123ed6c599141ce78c0c2852e1c7c6fd723ad8",
+    "tests/test_evaluation_boundary.py": "0916b6991f695ac4d978e97a442a5fa3954ab60a3ebc47fe0c5dc0e1399091c2",
+    "tests/test_mechanics.py": "561ddaffa91f77969651b2a1d7e0551900be22443e0681388a7e9a277f19299c",
+    "tests/test_metrics_and_splits.py": "7a05e40a007cc235809a1fa19b9b0b40c324c27bc60b636b0f9e4cd9e8df0159"
+  },
+  "status": "frozen_before_test_oracle_evaluation"
+}

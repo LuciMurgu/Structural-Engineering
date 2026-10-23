@@ -1,0 +1,19 @@
+[project]
+name = "bg-exp-001"
+version = "0.1.0"
+description = "Controlled behavioral geometry benchmark on six-DOF spring networks"
+requires-python = ">=3.11"
+dependencies = ["numpy==2.4.4", "matplotlib==3.10.9"]
+
+[dependency-groups]
+dev = ["pytest==9.0.3"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bg_exp001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

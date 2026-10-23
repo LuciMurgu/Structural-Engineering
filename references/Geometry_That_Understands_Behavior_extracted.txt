@@ -1,0 +1,2150 @@
+GEOMETRY THAT UNDERSTANDS
+BEHAVIOR
+From structural stiffness and energy norms to intervention-aware
+embedding spaces
+
+A mathematical research monograph, design specification, and experimental protocol
+
+
+Research concept · Version 1.0 · 23 October 2026
+
+
+Status: Conceptual proposal and reproducible mathematical demonstration. Not a claim of a newly discovered theorem
+or of experimentally established advantage.
+
+
+  Central thesis. Instead of treating an embedding as an ordinary list of numbers and automatically using
+  Euclidean distance, define which differences matter—energy, response, observability, or intervention cost
+  —and give the representation a geometry that preserves those differences.
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+
+Executive abstract
+Modern representation learning often places complex systems into low-dimensional vector spaces and compares
+the resulting vectors by Euclidean or cosine distance. Those distances are convenient, but generally do not encode
+physical energy, response sensitivity, dynamics, or intervention effects. Structural mechanics offers a constructive
+alternative: a symmetric positive-definite stiffness matrix defines a quadratic energy, and therefore a physically
+interpretable norm on displacement differences. Graph signal processing, system identification, optimal control,
+information geometry, and Riemannian representation learning provide related constructions.
+This monograph develops the connection carefully. For a spring network, the assembled stiffness matrix is
+algebraically the weighted graph Laplacian. For a linear dynamical system, the finite-horizon observability Gramian
+weights initial-state differences by the resulting sensor-output differences. For a learned response model, a
+Jacobian pullback gives a local positive-semidefinite metric that quantifies which embedding directions most
+strongly change predicted behavior. Fractional powers of graph operators allow continuous reweighting of spectral
+scales. Structural and behavioral metrics can be combined—subject to compatibility, scaling, positivity, experimental
+identification, and rigorous validation—to create domain-specific embedding geometries.
+
+
+The document distinguishes mathematical identities, engineering analogies, established research approaches, and
+new testable proposals. It provides exact calculations, a proposed architecture, an implementation sketch, a
+structural-engineering benchmark, a possible application to single-cell perturbation prediction, statistical validation
+rules, ablation studies, limitations, and a reproducible Python demonstration.
+
+
+Five essential conclusions
+  1.    A distance is meaningful only relative to what must be preserved. Different scientific questions require
+        different geometries.
+  2.    For a fixed linear elastic structure, the stiffness-energy norm is exact; for nonlinear, stochastic, or learned
+        systems, analogous operators must be derived and validated.
+  3.    The output sensitivity matrix J ⊤ W J is a principled local geometric construction, but it is usually
+        semidefinite, not automatically a globally valid distance.
+  4.    Fractional powers Lα are a legitimate multiscale spectral family. They are not, by themselves, proof that a
+        dataset has fractal structure.
+  5.    The credible contribution is not inventing quadratic metrics. It is demonstrating that a carefully defined
+        behavior-aware geometry improves out-of-sample scientific tasks beyond simpler representations, without
+        data leakage or circular training targets.
+
+Recommended reading path
+Readers who want the intuition should begin with Sections 1–6. Those interested in the mathematics of dynamic
+response and curved embedding spaces should study Sections 7–13. The research architecture and the
+experimental protocol appear in Sections 14–20. Appendices contain exact calculations, computational guidance,
+checks, and references.
+
+
+
+Part I — What does distance mean?
+1. The research question and the hypothesis
+                                           d
+An embedding model is a map f θ : X → R , producing a representation z=f θ ( x ). Ordinarily, two samples are
+compared through
+
+                                         d E ( x i , x j ) =∥ f θ ( x i ) − f θ ( x j ) ∥2 .
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                     2
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+This makes a hidden assumption: one unit of movement in every embedding direction has the same meaning, after
+taking account of scale. That assumption is often unsupported. One coordinate can encode a nearly irrelevant
+nuisance variable; another can strongly affect failure probability, cell response, vibration amplitude, or operational
+decisions. A learned space can also be rotated, stretched, or reparameterized while preserving predictions, so raw
+coordinate distance is generally not intrinsic.
+Research question. Can we construct or learn embedding spaces such that proximity corresponds to a domain-
+relevant notion of physical or functional equivalence?
+
+
+Main hypothesis H1. A metric induced by physically meaningful operators or experimentally measured responses
+predicts unseen behavior more faithfully than Euclidean distance between otherwise comparable embeddings.
+
+
+Secondary hypothesis H2. Multiscale spectral weighting may recover useful differences that a single-scale energy
+norm overlooks, but only when the underlying graph genuinely captures relevant organization.
+
+
+Null hypothesis. Once representation dimension, supervision, model capacity, normalization, and computational
+budget are controlled, metric-aware representations do not provide a reproducible improvement over simple
+baselines.
+
+
+These hypotheses are falsifiable. Failure of H1 or H2 is informative and should not be reinterpreted as a successful
+demonstration of the proposal.
+
+
+2. Four notions that must not be confused
+ Quantity                                Definition, informally                      Answers the question
+
+                                         A length computed directly from numerical
+ Coordinate distance                                                                 “How far apart are the vectors?”
+                                         coordinates
+
+                                         A norm defined by a positive-definite       “How energetically significant is their state
+ Energy-induced distance
+                                         quadratic energy                            difference?”
+
+                                         A comparison of outputs under a specified   “How differently do they behave when
+ Behavioral distance
+                                         family of conditions                        tested alike?”
+
+                                         Cost of steering one state into another
+ Transition effort                                                                   “How difficult is the transformation?”
+                                         under admissible controls
+
+We will use the word distance carefully. A mathematical metric satisfies nonnegativity, identity of indiscernibles,
+symmetry, and the triangle inequality. A pseudometric can assign zero distance to distinct objects. A divergence
+need not be symmetric or obey the triangle inequality. A control cost is typically dependent on time, dynamics, and
+direction and should not automatically be called a metric.
+
+
+If M =M ⊤ ≻ 0 is a symmetric positive-definite matrix, the expression
+
+
+
+                                          d M ( x , y )=√ ( x − y ) M ( x − y )
+                                                                    ⊤
+
+
+
+
+is a true metric on compatible vectors. If M ≽ 0 is only positive semidefinite, it defines a pseudometric unless the
+null directions are identified as equivalent. If M is indefinite, the square root can be invalid and the construction is
+not a distance.
+The data, physical units, boundary conditions, and domain of validity must all be specified before using any such
+formula.
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                               3
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+3. Mathematical language and notation
+ Symbol                                                         Meaning
+
+
+ u ∈ Rn                                                         Displacement or generalized mechanical state
+
+
+ x∈X                                                            Original high-dimensional observation/state
+
+
+ z ∈ Rd                                                         Learned or engineered embedding, usually d ≪ n
+
+
+ K                                                              Structural stiffness operator after relevant constraints
+
+ M                                                              General metric matrix, not necessarily mass
+
+ M mass                                                         Physical mass matrix when needed
+
+                                                                Edge–vertex incidence matrix, or control input matrix when
+ B                                                              explicitly qualified
+
+ L                                                              Weighted graph Laplacian
+
+                                                                Load, experiment, perturbation, environment, or intervention
+ s                                                              context
+
+ g ( z , s)                                                     Predicted observable response under s
+
+
+ J g =∂ g/ ∂ z                                                  Jacobian of the response map with respect to latent coordinates
+
+
+ W ≽0                                                           Weighting of response components
+
+ α                                                              Fractional spectral exponent
+
+
+ Δx                                                             x a − x b when the pair is clear
+                 2     ⊤
+We use ∥ v ∥ M =v          M v only when the indicated expression is nonnegative. Unless stated otherwise, all
+comparisons use states defined on the same vector space or mapped to a common set of observables.
+
+
+4. Structural mechanics: a quadratic form with physical meaning
+4.1 One spring
+Consider a linear spring of stiffness k >0 connecting scalar-displacement nodes i and j . Relative extension is
+e i j =ui − u j, so its elastic strain energy is
+                                                          1              2
+                                                   U i j = k ( ui − u j ) .
+                                                          2
+
+A uniform translation of the two nodes has zero spring extension and zero energy. Thus, the spring cares about
+relative configuration, not absolute coordinate values.
+The local stiffness matrix is
+
+
+
+                                                      k   [ −11 −11) ,
+whose eigenvalues are 0 and 2 k . The zero mode represents rigid translation. Without a support or quotienting out
+rigid motion, its energy is a seminorm, not a norm.
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                               4
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+4.2 Assembly: many springs
+For a scalar spring network with an arbitrarily oriented incidence matrix B ∈ R m × n, the edge-extension vector is
+e=B u. Let D=diag ( k 1 , … , k m ). The total elastic energy is
+                                                    1        1
+                                           U ( u ) = e ⊤ D e= u⊤ ( B ⊤ D B ) u .
+                                                    2        2        ¿
+
+
+
+Hence
+
+                                                          K =B ⊤ D B .
+
+This identity is exact for the stated scalar spring model. Linear elastic trusses, frames, plates, and solid finite
+elements retain the general structure of a quadratic elastic energy and assembled stiffness, but they use richer
+kinematics, constitutive matrices, geometric transformation rules, and multiple degrees of freedom per node. The
+scalar-graph identity must not be casually extended to every finite element stiffness matrix.
+
+
+
+
+                                                                                                           ⊤
+                      Figure 1. A scalar spring assembly and a weighted graph share the algebraic form B       D B.
+4.3 Stiffness-induced state difference
+For a fixed, constrained linear elastic system, define
+
+                                                            √            ⊤
+                                           d K ( ua , ub )= ( ua − ub ) K ( ua − ub ) .
+
+                                                                                                 2
+This is the energy norm of the difference displacement. If Δ u=u a − u b , then 1/2 d K equals the elastic energy that
+would be stored by that difference field in the fixed linear model. It is not generally equal to U ( u a ) − U ( u b ).
+
+With displacement units m and stiffness units N/m, u⊤ K u has units of joules. Thus d K has units √ joule . It is not
+dimensionless, and should not be combined numerically with other distances without scaling or normalization.
+
+
+4.4 What changes in nonlinear mechanics?
+                                                                                                       2
+A nonlinear structure has potential energy Π ( u ) and local tangent stiffness K t ( u ) =∇ Π ( u ) where differentiable.
+A positive-definite K t defines a local quadratic metric in a stable region, but not necessarily one global metric.
+Near buckling, loss of stability, contact transitions, or material softening, K t may be singular or indefinite. Replacing
+it by a positive-definite regularization is then a modeling choice that may hide exactly the instability of interest.
+Geodesic length in a positive local metric should also not be confused with the actual mechanical work along a
+nonlinear loading path.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                          5
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+5. A numerical two-storey example: Euclidean similarity fails
+Take a two-storey shear building, with floor displacements u1 , u 2 relative to a fixed base. Let the first and second
+storey stiffnesses be k 1 =k 2 =1 in normalized units. Then
+
+
+                                          U =1/2 u12 +1/2 ( u2 − u1 ) , K =
+                                                                            2
+                                                                                       [ −21 −11) .
+Compare two changes from the undisplaced state:
+
+                                                            a=   [ 11) , b=[ −11) .
+They have identical Euclidean lengths:
+
+                                                    ∥ a ∥2=∥ b ∥2= √ 2 ≈ 1.414 .
+
+
+Yet their stiffness lengths are
+
+                                     ∥ a ∥ K = √ a K a=1 ,∥ b ∥ K = √ b K b= √ 5 ≈ 2.236 .
+                                                   ⊤                               ⊤
+
+
+
+
+The associated elastic energies are U ( a ) =0.5 and U ( b ) =2.5 . Pattern a deforms the first storey while both
+floors move together; pattern b produces a relative upper-storey displacement of − 2.
+
+
+
+
+Figure 2. Two displacement patterns with equal Euclidean length but different interstorey drifts and strain energies. Drawings are schematic, not
+                                                                  to scale.
+
+                                                                                                 ⊤
+A second calculation clarifies the meaning of pairwise distance: a − b= ( 0 , 2 )                    and therefore d K ( a , b ) =2. This is
+not   |√ 2 U ( a ) − √ 2U ( b ) ).
+
+5.1 Why the contours are ellipses
+Diagonalize K =Q Λ Q ⊤. The squared energy distance becomes
+                                                                       n
+                                                       ∥ Δ u ∥2K =∑ λi ( q ⊤
+                                                                                         2
+                                                                           i Δ u) .
+                                                                     i=1
+
+
+
+
+For a positive-definite K , the locus Δ u⊤ K Δ u=1 is an ellipse in two dimensions, or an ellipsoid in higher
+dimensions. Directions corresponding to large eigenvalues are energetically expensive: a smaller displacement
+produces the same distance.
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                             6
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+
+                          Figure 3. Euclidean circles and stiffness-induced ellipses for the two-storey example.
+
+The Euclidean vector is not wrong; it simply answers a different question. The choice of metric is a modeling
+decision about what matters.
+
+
+6. The exact connection to graph Laplacians
+For an undirected weighted graph, orient every edge arbitrarily to create an incidence matrix B . With nonnegative
+edge weights w e in W , the combinatorial Laplacian is
+
+                                           L=B ⊤ W B=D d e g r e e − A a d j a c e n c y .
+
+
+For a node-valued scalar signal x , the graph Dirichlet energy is
+
+                                                x ⊤ L x= ∑ w i j ( x i − x j ) .
+                                                                                      2
+
+                                                             {i , j }∈ E
+
+
+
+The scalar spring-network stiffness is precisely this operator when edge weights represent spring stiffness. In graph
+signal processing, the same expression penalizes variation between strongly connected vertices [R1]. The identity
+is algebraic, but the interpretation of the weights differs across domains.
+
+6.1 Important mathematical qualifications
+   •     The combinatorial Laplacian of any graph has at least one zero eigenvalue. A connected graph has the
+         constant vector in its nullspace; a graph with c connected components has at least c independent null
+         vectors.
+   •     Therefore   √ Δ x ⊤ L Δ x is normally a pseudometric on raw node signals. It becomes a metric on the
+         quotient space after declaring constant shifts on each connected component equivalent, or on an
+         appropriately constrained subspace.
+   •     Adding ε I produces a positive-definite metric but changes the scientific meaning: even constant shifts
+         become costly. This should be declared, not hidden.
+   •     A degree-normalized Laplacian and a combinatorial Laplacian give different quadratic energies. Their
+         choice should be an experimental factor.
+   •     Directed, signed, inhibitory, or nonconservative interactions require additional modeling. Simply
+         substituting a nonsymmetric adjacency matrix can destroy the properties used above.
+
+6.2 Graph smoothness is not automatically system behavior
+Low graph energy means neighboring nodes have similar values. It does not automatically imply biological
+regulatory similarity, mechanical stability, or causal equivalence. A biological coexpression edge reflects a statistical
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                      7
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+relationship, possibly confounded by cell type or batch, not a physical spring. This distinction is central in applying
+the theory outside mechanics.
+
+
+
+Part II — Distances induced by function and dynamics
+7. Modal analysis: a physically meaningful embedding
+In linear undamped structural dynamics, the generalized eigenproblem is
+                                                                  2
+                                                   K ϕ i =ωi M m a s s ϕ i .
+
+                                                                                            ⊤
+Suppose the selected mode shapes form Φ ∈ R n × r , with mass normalization Φ                   M m a s s Φ=I , and write u ≈ Φ q
+.
+The reduced stiffness matrix is
+
+
+
+                                          K r =Φ ⊤ K Φ=diag ( ω12 , … , ω2r )
+
+
+for exact generalized modes in the chosen basis. Thus the coefficients q are a mechanistically derived embedding,
+and their distance is
+                                                              r
+                                          d 2K ( q a , q b ) =∑ ωi2 ( q a ,i − q b ,i ) .
+                                                                                      2
+                                              r
+                                                             i=1
+
+
+
+We have reduced dimension while retaining a particular notion of mechanical difference. The approximation is
+faithful only in the modal subspace; omitted modes can contribute important localized stresses or high-frequency
+behavior. Modal truncation should therefore be evaluated against the responses one wishes to preserve, not only
+the percentage of modal mass.
+This gives a conceptual recipe for machine learning: learn a compact coordinate system, but preserve a domain-
+defined quadratic form in those coordinates.
+
+
+8. A global Mahalanobis metric versus a physical metric
+A general global quadratic distance is
+                                      2                               ⊤
+                                    d M ( z a , z b )=( z a − z b ) M ( z a − z b ) , M ≽ 0 .
+
+
+Any M =R ⊤ R is positive semidefinite, giving d M =∥ R ( z a − z b ) ∥2. In statistical Mahalanobis distance, a
+common choice is M =Σ −1, where Σ is a positive-definite covariance matrix. Correlated, high-variance directions
+then contribute differently from uncorrelated, low-variance directions.
+This is not yet physical meaning. Covariance estimates statistical spread; stiffness estimates elastic response; a
+learned behavioral matrix estimates output sensitivity. They may share algebra but encode different scientific
+commitments.
+
+
+A trainable global matrix is a useful baseline because it tests whether a complicated state-dependent geometry
+provides benefit beyond simple reweighting and rotation.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                              8
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+9. Behavioral distance: compare systems by their response profiles
+Let s denote a controlled condition: a load case, stimulation protocol, perturbation, environment, or input
+sequence. Let r ( x , s ) be an observable response from system or state x under condition s . Choose a distribution
+π ( s ) over conditions that matter for intended use and a nonnegative response weighting W .
+Define the squared response-profile distance:
+
+
+
+                                                        [
+                       d 2r e s p ( x a , x b ) =E s ∼ π ( r ( x a , s ) − r ( x b , s ) ) W ( r ( x a , s ) − r ( x b , s ) ) ) .
+                                                                                        ⊤
+
+
+
+
+                                                                                                                                     2
+If W is fixed and positive semidefinite, this is a squared norm between two response functions in a weighted L
+space. Its square root obeys symmetry and the triangle inequality. It may be a pseudometric, because distinct
+states can produce identical responses on the chosen conditions and sensors. This may be desirable when the
+objective is functional equivalence under those tests.
+The meaning of the distance depends on five explicit choices:
+
+
+   1.    Condition family: which interventions are included, excluded, and sampled more often?
+   2.    Observable: which outputs are scientifically or operationally important?
+   3.    Scale/units: how are heterogeneous outputs normalized?
+   4.    Time horizon: immediate response, long-run behavior, or a trajectory?
+   5.    Uncertainty: how much measurement noise and model error should count?
+Two objects can be far apart geometrically yet have small d r e s p because they behave similarly under the chosen
+tests. Conversely, visually similar objects can have very different response profiles near a critical operating
+condition.
+
+9.1 Comparing different structures under common loads
+For linear static elasticity under admissible loading, K A u A =f A and K B u B =f B . If both structures share the same
+constrained degrees of freedom and load coordinates, one may write
+                                                                     −1                            −1
+                                              r ( A , f ) =C K A f , r ( B , f ) =C K B f ,
+
+
+where C selects comparable physical sensor outputs. Then
+
+                                                                      [     A − K B ) f ∥W ) .
+                                          d 2r e s p ( A , B ) =E f ∥ C ( K −1    −1     2
+
+
+
+
+If the meshes or geometries differ, use compatible loading maps P A , P B and observation maps C A , C B: compare
+C A K −1                 −1
+      A P A f with C B K B P B f . Do not subtract displacement vectors from unrelated meshes without a defined
+correspondence.
+
+If f is zero-mean with covariance Σ f and the response difference is linear, the expectation is equivalently
+
+
+
+                           d 2r e s p ( A , B ) =tr ( W D Σ f D ⊤ ) , D=C A K −1            −1
+                                                                              A P A − C B K B PB .
+
+
+
+That formula illustrates a striking idea: similarity between structures can be explicitly conditioned on the loads that are
+likely or important, instead of their geometry alone.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                         9
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+10. An observability Gramian is an exact behavioral metric operator
+An especially important bridge between mechanics and machine learning comes from linear system theory.
+Consider the autonomous continuous-time state-space model
+
+                                                    ẋ ( t ) = A x ( t ) , y ( t ) =C x ( t ) .
+
+                                                    At                                              At
+Its solution from initial state x 0 is x ( t ) =e        x 0 and its measured output is y ( t ) =C e x 0. For two initial states,
+the output difference is
+
+                                                           Δ y ( t ) =C e A t Δ x 0 .
+
+
+If what matters is the accumulated squared sensor discrepancy over the time interval [ 0 ,T ) , define
+                                                               T
+
+                                           d ( x a , x b ) =∫ ∥ C e A t ( x a − x b ) ∥22 d t .
+                                             2
+                                             O
+                                                               0
+
+
+
+Rearranging yields
+                                                                                         T
+
+                            d ( x a , x b ) = Δ x W O ( T ) Δ x 0 ,W O ( T ) =∫ e A t C ⊤ C e A t d t .
+                                                                                                  ⊤
+                              2                     ⊤
+                              O                     0
+                                                                                          0
+
+
+
+
+W O ( T ) is the finite-horizon observability Gramian. The derivation is exact for this linear system [R10]. Unlike an
+arbitrary learned metric, its weighting of initial-state directions comes directly from their influence on measured
+trajectories.
+
+   •      If W O ( T ) ≻ 0 , distinct states are distinguishable from output histories and d O is a metric.
+
+   •      If it is singular, distinct states can be indistinguishable through the chosen sensors/time window, so d O is a
+          pseudometric.
+   •      Changing the sensors C , weighting, or horizon T changes what the geometry considers important.
+   •      In structural dynamics, the state should normally contain both displacements and velocities. A damped
+          mechanical system can be converted to first-order state space for this construction.
+
+10.1 A minimal exact calculation
+Let A=diag ( − 1 , − 4 ) and C=I , representing two independent stable response components with different
+decay rates. Over an infinite horizon,
+
+                                                     W O ( ∞ ) =diag ( 1/2 ,1/8 ) .
+
+
+A unit change in the slowly decaying first state has output-history squared length 1/2, whereas a unit change in
+the rapidly decaying second state has length 1/8 . Equal Euclidean perturbations no longer have equal dynamical
+significance: one persists longer and is therefore more observable.
+This has a direct interpretation for structural monitoring: a state difference that produces sustained sensor
+deviations should count more than one that disappears quickly, if monitoring over the chosen horizon is the
+intended objective.
+
+
+10.2 The input is a different operator
+The system may instead obey ẋ= A x + B c v , where B c is a control-input matrix and v is an applied input. The
+input affects the system trajectory, but the observability Gramian above still measures how initial-state differences
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                              10
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+appear in outputs when the same input is applied to both states. Different inputs or uncertainty in the input require
+a revised experimental definition.
+
+
+11. Control energy: transformation cost rather than ordinary distance
+For the controlled linear system
+
+                                                       ẋ= A x + B c v ( t ) ,
+
+                                                            T
+we can ask for the smallest squared control energy         ∫ ∥ v ( t ) ∥22 d t needed to reach a target. The controllability
+                                                            0
+Gramian is
+                                                            T
+
+                                              W C ( T ) =∫ e A t B c B ⊤
+                                                                                  ⊤
+                                                                           A t
+                                                                       c e     dt.
+                                                            0
+
+
+
+
+Under reachability and positive definiteness, minimum effort from initial state x a to final state x b is
+                                                                         ⊤
+                            E min ( x a → x b ; T ) =( x b − e A T x a ) W C ( T )          ( xb − e A T xa ) .
+                                                                                       −1
+
+
+
+
+                                                      AT
+The subtraction of the naturally evolved state e           x a is essential. Replacing it by x b − x a is generally incorrect
+unless the unforced dynamics have a suitable special form.
+Minimum transition effort depends on direction, admissible controls, and time horizon. It is generally asymmetric,
+so calling it a metric without modification is a mathematical error.
+
+
+The lesson for embeddings is nonetheless valuable: one could represent states so that directed links or costs
+capture how hard it is to move between them. This might be important for drug interventions, adaptive control,
+structural rehabilitation, or planning. It is a separate target from behavioral similarity, not a substitute for it.
+
+
+12. Learn the metric from a differentiable response model
+Suppose we cannot write a physical stiffness matrix directly, but we can estimate a response map g ϕ ( z , s ) from an
+embedding and a condition s to a vector of relevant outputs.
+
+For a fixed s , the Jacobian with respect to latent coordinates is
+
+
+
+                                                                ∂ gϕ ( z , s )
+                                              J g ( z , s )=                   ∈ R p×d .
+                                                                   ∂z
+
+
+For a small displacement δ in latent space, Taylor expansion gives
+
+                                           g ϕ ( z+δ , s ) − g ϕ ( z , s ) ≈ J g ( z , s ) δ .
+
+
+Measure the weighted squared output change and average over relevant conditions:
+
+                               E s [ ∥ g ϕ ( z+δ , s ) − g ϕ ( z , s ) ∥W2 ) ≈ δ ⊤ E s [ J ⊤
+                                                                                           g W J g) δ .
+                                                                                                 ¿
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                11
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+Thus the local behavioral metric tensor is
+
+                                              M B ( z ) =E s ∼ π [ J g ( z , s ) W J g ( z , s ) ) .
+                                                                               ⊤
+
+
+
+
+This is a pullback of the output-space geometry into latent space. It is positive semidefinite whenever W ≽ 0 ; it is
+positive definite only if the relevant Jacobians jointly distinguish every nonzero latent direction.
+
+12.1 A numerical example with an interpretable answer
+Let the two-dimensional embedding be z= ( z 1 , z 2 ) and suppose the response model is locally linear with
+
+
+                                                g ( z )=
+                                                           [             ) [
+                                                               z 1 +0.2 z 2
+                                                                   3 z2
+                                                                            , J g=
+                                                                                   1 0.2
+                                                                                   0 3
+                                                                                         .     )
+Assume the response weighting is W =diag ( 1 , 0.25 ), perhaps because the second output’s scale or relevance
+has been normalized accordingly. Then
+
+                                                   M B =J ⊤
+                                                          g W J g=         [ 0.21 2.29
+                                                                                   0.2
+                                                                                       ).
+Compare two equal Euclidean perturbations: δ 1 = ( 0.5 , 0 ) and δ 2 = ( 0 , 0.5 ). Their Euclidean lengths are both 0.5 ,
+but
+                                               ⊤                         ⊤
+                                             δ 1 M B δ 1=0.25 , δ 2 M B δ 2=0.5725 .
+
+
+The corresponding behavioral lengths are 0.5 and approximately 0.757 . The second direction matters more
+because it changes the measured response more strongly under the specified weighting.
+
+
+
+
+         Figure 4. The same latent coordinate changes have different lengths after pulling response sensitivity back into latent space.
+
+12.2 The two main failure modes
+First, a model can be wrong. If g ϕ predicts an incorrect response, then its Jacobian defines a confidently wrong
+geometry. The metric is only as trustworthy as the response model and its training evidence. Validation against
+genuinely unseen responses is mandatory.
+Second, a Jacobian sees local first-order behavior. In regions of saturation, discontinuity, bifurcation, or large state
+changes, the local quadratic approximation can be inadequate. A path-integrated geometry or direct finite-
+response comparison may be more appropriate.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                          12
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+13. Curved spaces, geodesics, and information geometry
+13.1 When a global matrix is insufficient
+If M B depends on z , distance is not computed reliably by using only the matrix at the starting point. A
+continuously varying positive-definite tensor M ( z ) defines the length of a smooth curve γ : [ 0 , 1 ) → R :
+                                                                                                             d
+
+
+                                                     1
+
+                                          L ( γ ) =∫ √ γ̇ ( t ) M ( γ ( t ) ) γ̇ ( t ) d t .
+                                                                  ⊤
+
+                                                     0
+
+
+
+The geodesic distance is the minimum path length connecting the points:
+
+                                            d G ( z a , z b )=            inf                  L(γ ).
+                                                                 γ ( 0 ) =z a , γ ( 1 ) =z b
+
+
+
+A straight line is generally not a shortest path in this geometry. If the tensor is singular, extra care is needed; the
+usual Riemannian manifold assumptions fail and points may have zero distance or other degeneracies. A small
+regularizer ε I can make the metric positive definite, but the result is then the geometry of the regularized objective.
+
+An important existing body of work studies these geometries for learned generative models [R5, R6]. This proposal
+belongs in that intellectual tradition, rather than claiming that Jacobian-based latent metrics are new.
+
+
+13.2 Why pullback geometry addresses coordinate arbitrariness
+Suppose the latent coordinates are reparameterized smoothly by z=h ( ξ ) . The metric transforms to
+                                                                 ⊤
+                                           M ξ ( ξ ) =J h ( ξ ) M z ( h ( ξ ) ) J h ( ξ ) .
+
+
+This transformation law preserves the length of corresponding curves. By contrast, Euclidean distances between
+the raw coordinate vectors can change under stretching and nonlinear reparameterization. The benefit is geometric
+coordinate consistency, not an automatic discovery of causal structure.
+
+13.3 Probability predictions lead to a Fisher geometry
+If g predicts a probability distribution p ( y ∣ z , s ) rather than a deterministic output, local changes can be
+measured through the Kullback–Leibler divergence. Under regularity conditions,
+
+                                   D K L ( p z+δ ∥ p z ) =1/2 δ ⊤ F ( z ) δ +o ( ∥ δ ∥2 ) ,
+
+
+where F ( z ) is the Fisher information matrix with respect to the latent coordinates (and, if desired, averaged over
+conditions). This gives an information-geometric metric for changes in predicted distributions, rather than just
+changes in their means [R11].
+The KL divergence itself is not symmetric and is not a metric; the quadratic Fisher construction describes its local
+second-order geometry. For a Gaussian prediction with fixed covariance Σ , its mean-related metric is exactly
+ ⊤   −1
+J μ Σ J μ; changing predicted covariance adds further terms.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                    13
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+
+Part III — Spectral, fractional, and multiscale geometry
+14. Spectral decomposition identifies directions, not merely coordinates
+Let L=Q Λ Q ⊤ be a symmetric graph Laplacian, with nonnegative eigenvalues 0= λ 1 ≤ … ≤ λ n. Its eigenvectors
+
+form a graph Fourier basis. If a graph signal is x=           ∑ ai qi, then
+                                                                 i
+
+                                                            x ⊤ L x=∑ λi ai2 .
+                                                                          i
+
+
+
+Small eigenvalues correspond to graph-smooth spectral directions and large eigenvalues to graph-oscillatory
+directions. The interpretation is relative to the graph and its weights, not necessarily to Euclidean spatial
+frequency.
+
+The L -energy may put very large emphasis on high graph frequencies and little or none on low ones. That is
+reasonable for some smoothness or deformation penalties, but may not reflect the structure of the scientific
+prediction target.
+
+
+14.1 Continuous fractional powers
+For a spectral exponent α >0, define
+
+                                                     Lα =Q diag ( λ1α , … , λ nα ) Q ⊤ .
+
+
+The corresponding quadratic separation is
+
+                                    d 2α ( x , y ) = ( x − y ) Lα ( x − y ) =∑ λiα ( q ⊤
+                                                             ⊤                                    2
+                                                                                       i ( x − y)) .
+                                                                                  i
+
+
+
+
+This is a continuous family of spectral weightings. We do not have to restrict the exponent to integers or scales of 2n.
+For example, α=0.25 , 0.5 , 0.75 , 1 , 1.3 are mathematically well defined for a symmetric positive-semidefinite L.
+
+
+
+
+   Figure 5. Changing the fractional exponent changes the relative emphasis on different graph spectral directions. The plot uses illustrative
+                                                          normalized eigenvalues.
+
+The graph Laplacian retains its zero eigenvalues under any positive power. Therefore Lα still gives a pseudometric
+for a graph with unconstrained constant directions. To obtain a full metric on the whole ambient space, one may
+use Lα +ε I with ε >0 , or restrict to the identifiable subspace.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                            14
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+14.2 Normalization matters more than it first appears
+For an eigenvalue 0< λ<1, decreasing α increases λ α ; for λ>1, decreasing α reduces it. Thus fractional powers do
+not universally “downweight high frequencies” in an absolute sense unless the operator’s scale and reference are
+specified. What is robust is the relative spectral contrast:
+
+                                                     λiα
+                                                      α
+                                                     λj
+                                                        =
+                                                               ( )
+                                                                λi α
+                                                                λj
+                                                                     , λi , λ j >0 .
+
+
+
+We recommend first fixing a graph construction and an operator normalization, then sweeping α against frozen
+predictive tasks. Rebuilding the graph after looking at held-out outcomes would compromise the experiment.
+                                   +¿ ¿
+14.3 The subtle limit as α → 0
+            α
+For λ i >0 , λ i → 1. But for a zero eigenvalue, 0 α =0 for all α >0. Therefore
+
+                                                                  lim                             ¿
+                                          α → 0+¿ Lα =orthogonal projector onto range ( L ) , ¿
+
+
+
+not generally the identity matrix. In a connected graph this projects away the constant signal. This detail matters
+when describing small-exponent behavior or implementing limiting baselines.
+
+14.4 Fractional graph operators are established mathematics
+Fractional graph Laplacians have already been investigated in network diffusion and long-range stochastic
+dynamics. Riascos and Mateos, for example, construct fractional network dynamics spectrally and demonstrate
+their connections with anomalous diffusion [R8]. Thus using Lα is not new in itself. A possible innovation would be
+a carefully evaluated task-aware spectral metric combining fractional structural information with response
+sensitivity.
+
+
+15. Alternatives to fractional powers: diffusion and spectral filters
+A more general spectral metric can be written
+                                                                                            ⊤
+                                            M h =h ( L ) =Q diag ( h ( λ i ) ) Q ,
+
+
+where h ( λ ) ≥ 0 is a chosen spectral weighting function. Fractional powers are one member of this family.
+
+Important alternatives include:
+
+
+                                            −t L
+   •     Heat/diffusion filtering: H t =e          smooths graph signals; t >0 controls a continuous scale. Comparing
+                                                                                                      ⊤            −2 t L
+         filtered signals with ∥ H t ( x − y ) ∥2 corresponds to metric matrix H t                        H t =e            .
+   •     Band-pass graph wavelets: filters centered on selected spectral bands can isolate intermediate scales [R4].
+         A multi-filter metric can combine squared differences in several wavelet bands.
+                                                          −1
+   •     Regularized inverse operators: ( L+ μ I )             emphasizes some smooth directions, but its interpretation and
+                                                                                      α
+         sensitivity to small eigenvalues differ fundamentally from L .
+
+   •     Learned nonnegative spectral response: h η ( λ ) ≥ 0 offers flexibility, but increases overfitting risk and
+         requires carefully constrained complexity.
+Diffusion maps [R3] and diffusion wavelets [R4] show that meaningful multiscale geometry can arise from operator
+dynamics without requiring a fractal explanation.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                15
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+15.1 Multiscale does not mean fractal
+A structure can exhibit behavior at several scales without having a measurable fractal dimension. A claim of
+fractality requires an operational definition, a defensible scaling range, uncertainty estimates, and comparison with
+nonfractal alternatives. For a finite graph, apparent power laws can result from finite-size effects, degree
+heterogeneity, thresholding, or preprocessing.
+We therefore propose two separate research tracks:
+
+
+   1.    Spectral-metric track: Does adjusting spectral weighting improve the prediction task?
+   2.    Scale-invariance track: Is there statistically credible evidence for stable scaling laws over enough
+         independent scales to justify a fractal interpretation?
+The first can succeed while the second fails. That would still be scientifically valuable.
+
+
+16. The general principle: define meaning before learning coordinates
+We can now express the guiding method:
+Step 1 — Specify the behavioral equivalence relation. Two states are equivalent for the application when their
+responses agree within a meaningful tolerance under the approved conditions.
+
+
+Step 2 — Choose structural and response operators. These may be an assembled stiffness matrix, a verified graph
+Laplacian, an observability Gramian, a response function, or a probability model.
+
+
+Step 3 — Pull the chosen geometry into a representation space. Use analytical reduction, Jacobian pullback, or
+direct pairwise response distances.
+
+
+Step 4 — Test whether the metric preserves or predicts unseen outcomes. A plausible-looking embedding
+visualization is insufficient.
+
+
+Step 5 — Interpret the scale and null directions. What counts as indistinguishable? Which perturbations produce
+large changes? What is intentionally ignored?
+
+
+In short: rather than declaring that two objects are similar because their vectors are close, construct a space in
+which they are close because an explicit scientific relationship is preserved.
+
+
+
+Part IV — An explicit proposed model
+17. Structural–Behavioral Metric Embeddings (SBME): proposed architecture
+We give the proposed family of models a working name: Structural–Behavioral Metric Embeddings (SBME). This is
+only a descriptive research label; it does not claim a new algorithmic priority over existing metric-learning or
+pullback-geometry research.
+The system has four conceptually separate modules:
+
+
+   1.    An encoder f θ maps an object/state x and optional context c to a latent vector z .
+
+   2.    A structural map hψ ( z , c ) reconstructs or predicts a structured signal in a common space with graph or
+         physical operator Lc .
+
+   3.    A behavioral response model g ϕ ( z , s , c ) predicts a measurable response under condition or intervention
+         s.
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                     16
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+   4.        A metric constructor combines trusted structural geometry and verified response sensitivity into a locally
+             positive (semi)definite tensor.
+
+
+
+
+             Figure 6. Modular architecture: structural and behavioral operators supply geometry to an otherwise ordinary embedding.
+
+17.1 A general candidate tensor
+Write J h =∂ hψ / ∂ z , J g =∂ g ϕ / ∂ z , and choose a positive-semidefinite graph or mechanical operator A α ( c ). A
+candidate tensor is
+
+                                                h A α ( c ) J h +b E s ∼ π [ J g W c J g ) +r F ( z , c ) +ε I ,
+                               M ( z , c ) =a J ⊤                              ⊤
+                                                                             c
+
+
+
+
+with nonnegative a , b , r and ε >0 if a nondegenerate Riemannian metric is required. F is an optional Fisher-
+                                                                                                        ~ α
+information metric from probabilistic predictions. The structural operator might be ( Lc ) , a physical stiffness K , a
+                                                                    ~
+filtered graph operator, or a validated alternative. The L c notation stresses that a specific normalization must be
+fixed.
+Every term has a distinct interpretation:
+
+
+ Term                                             What it rewards or penalizes                   Key qualification
+
+                                                  Change in a structured reconstructed
+                                                                                                 Valid only if the structural map and
+ J⊤
+  h Aα J h
+                                                  signal according to a chosen
+                                                                                                 operator are meaningful
+                                                  graph/physical energy
+
+
+ E [ J g W J g)
+         ⊤                                                                                       Depends on response-model correctness
+                                                  Local sensitivity of measured responses
+                                                                                                 and sampled conditions
+
+                                                                                                 Requires a well-specified probabilistic
+ F (z ,c)                                         Change in predictive distributions
+                                                                                                 model
+
+ εI                                               Avoidance of zero-length latent directions     Introduces an explicit Euclidean preference
+
+Coefficients cannot be selected just because the terms have similar shapes. Their units, numerical scales, and
+scientific priorities must be calibrated. An interpretable approach divides each term by a positive training-set
+reference scale—such as its median nonzero trace per latent dimension—before choosing weights on
+training/validation data. Report the scales alongside the coefficients.
+
+
+17.2 The simpler alternative should be tried first
+A full local tensor is expensive and easy to overfit. The first research candidate should usually be
+
+                                                      d ( z i , z j ) =∥ R ( z i − z j ) ∥2 ,
+
+
+with R fixed from a known reduced operator or trained as a regularized global metric. Another inexpensive
+candidate is to augment existing features with selected graph spectral statistics and let an established downstream
+model decide whether they help.
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                           17
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+Only escalate to per-sample Jacobians and geodesics if simpler models fail to capture relevant behavior and the
+predictive task provides adequate evidence for learning a more flexible geometry.
+
+
+18. What exactly would be learned?
+There are at least four distinct optimization problems. They should not be collapsed into a vague statement such as
+“train the metric.”
+
+18.1 Task prediction
+                                                       (                           )
+Given training tuples ( x i , c i , s i , y i ), fit g ϕ f θ ( x i , c i ) , s i , c i to predict the observed outcome. For continuous
+outcomes, a basic standardized loss is
+
+                                                        1
+                                          Lp r e d=       ∑
+                                                        N i
+                                                            ∥ g ϕ ( f θ ( x i , c i ) , si , c i ) − y i ∥W2 .
+
+
+The weighting W and outcome standardization must be based on training data or a justified external measurement
+scale.
+
+18.2 Pairwise behavioral-distance supervision
+For objects i , j with adequate experimental coverage, estimate a reference response-profile distance
+
+                                                  ^ i2 j = 1 ∑ ∥ y i ( s ) − y j ( s ) ∥W2 .
+                                                  D
+                                                          |S i j ) s ∈ S   ij
+
+
+
+
+Fit an embedding/metric with a distortion penalty such as
+
+                                                             1
+                                                Lp ai r=              ∑ ρ ( d M ( z i , z j ) − D^ i j ) ,
+                                                            |P ) ( i , j ) ∈ P
+
+                                     ^ i j=
+where ρ can be robust Huber loss and D                       √ D^ . Pairs used for supervision must come from training-approved
+                                                                   2
+                                                                   ij
+outcomes only. If behavior is predicted by the same model, fitting the metric to the model’s own predicted
+distances is not independent validation.
+
+18.3 Structural consistency
+If a structural operator is trusted and the decoder is meaningful, a regularizer may penalize implausible graph
+signals or violations of known constraints. In mechanics, equilibrium and compatibility residuals are often more
+important than generic graph smoothness. For example, where a decoded displacement field is physically
+interpretable,
+
+                                                        Le q u i l i b r i u m =∥ K u^ − f ∥W2 .       f
+
+
+
+
+Such a residual requires the correct loads, constraints, units, and constitutive assumptions. Applying x ⊤ L x blindly
+can oversmooth precisely the sharp transitions or localized damage that a useful model must detect.
+
+18.4 A complete but guarded objective
+A family of training objectives might be
+
+                                   L=L p r e d + λ p L p a i r + λ s L s t r u c t u r a l + λ r Lr e g u l a r i z a t i o n .
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                         18
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+Examples of regularization include bounds on the condition number of a learned global matrix, spectral-norm
+control, and penalties against degenerate representations. No term should be included merely because its name
+sounds scientifically relevant. Each must have a measured ablation benefit or a justified constraint role.
+
+
+19. Causality: an aspiration that needs stronger evidence
+A behavior-aware metric is not automatically a causal metric. Predicting outcomes conditional on s is
+observational if the data do not identify the effect of intervening on s .
+
+A causal interpretation requires an explicit estimand and assumptions, such as the interventional response
+E [ Y ∣ do ( S=s ) , X =x ), and suitable experimental assignment or a credible identification strategy. Mechanistic
+simulators can supply interventions by construction, subject to simulator validity. Biological perturbation
+experiments may directly manipulate a target, but still require controls for off-target effects, selection, batch, dose,
+and measurement noise.
+
+
+We therefore distinguish:
+
+
+   •     Response-aware: similar under observed or predicted input–output behavior.
+   •     Intervention-aware: similar under experimentally manipulated conditions or identified causal effects.
+   •     Causal-structure-aware: sensitive to the mechanisms generating those effects; an even stronger claim
+         requiring additional evidence.
+The first may be demonstrated with observational predictive data; the others require more disciplined evidence.
+
+
+20. Algorithms, numerical complexity, and implementation choices
+20.1 Small problems: exact matrices
+For small matrices, use symmetric eigendecomposition, verify eigenvalues, compute Lα , and evaluate quadratic
+distances. Dense eigendecomposition is roughly cubic in node count and should not be used indiscriminately on
+large graphs.
+
+For fixed global metrics, use Cholesky or spectral factorization M =R ⊤ R and compute Euclidean distances
+between transformed vectors. Ensure all data types and numerical tolerances are explicit.
+
+
+20.2 Large graphs: avoid materializing dense fractional operators
+A sparse graph Laplacian can become dense after a fractional matrix power. For tens of thousands of nodes, an
+exact n × n dense representation is generally unattractive in memory and compute.
+                                                              α
+Options include polynomial approximations p m ( L ) x ≈ L x over a bounded spectrum, Krylov/Lanczos matrix-
+function methods, or low-rank spectral approximations when the scientific target is concentrated in retained
+bands. A low-rank eigen approximation of Lα ignores unretained modes, which can be dangerous if they carry the
+signal being sought. Approximation error must be quantified on representative vectors.
+
+
+20.3 Jacobian calculations
+                                                                                                p×d
+If output dimension p or embedding dimension d is large, forming the full Jacobian J g ∈ R            for every sample
+may be too costly. For a given direction v , the quadratic form can be evaluated without materializing the tensor:
+
+                                          v ⊤ M B ( z ) v=E s ∥ J g ( z , s ) v ∥W2 .
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                    19
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+An automatic-differentiation Jacobian–vector product (JVP) gives J g v efficiently. This supports testing directional
+distances, regularization, and local metric-vector products. If W is diagonal and only a few outputs matter, direct
+Jacobian assembly may also be practical.
+A geodesic solver adds substantially more cost; test whether direct response-profile distance or a global metric
+already solves the scientific task.
+
+
+20.4 Model design trade-offs
+ Candidate                    Cost                              Interpretability           Main risk                    Suitable first test
+
+ Euclidean/cosine             Low                               Coordinate-level           Wrong notion of similarity   Essential control
+
+                                                                                           Overfit or poor
+ Global Mahalanobis           Low–medium                        Moderate                                                Strong baseline
+                                                                                           conditioning
+
+ Fixed physical/graph                                                                      Bad graph or irrelevant
+                              Low–medium                        High if operator valid                                  Preferred physics test
+ operator                                                                                  operator
+
+                                                                                           Alpha tuning, leakage,
+ Fractional spectral family   Medium                            Moderate–high                                           Controlled ablation
+                                                                                           dense operators
+
+ Learned response-profile                                                                  Surrogate-model              Supervised behavioral
+                              Medium–high                       High if outcomes valid
+ distance                                                                                  circularity                  study
+
+ Local Jacobian                                                                            Cost, singularity, poor
+                              High                              Locally interpretable                                   Later-stage investigation
+ metric/geodesic                                                                           extrapolation
+
+
+
+
+Part V — Experiments that could establish or refute value
+21. Experiment A: finite-element structures with known governing equations
+Objective. Establish that the metric matches known mechanical-response relationships and adds value beyond a
+naive representation—not merely that a stiffness norm produces familiar results.
+
+21.1 Build the dataset
+Start with small two-dimensional trusses or shear-frame models whose stiffness matrices can be assembled exactly.
+For each structure:
+   •       Record topology, node positions, cross-sections, elastic moduli, supports, and admissible loading points.
+   •       Reject unstable mechanisms for the positive-definite stiffness-norm benchmark, but retain separate
+           labeled instability cases for a later safety experiment.
+   •       Compute static displacements and selected reaction forces under a common bank of load cases.
+   •       For a dynamics extension, also compute mass matrices, modal frequencies, and damped response
+           trajectories.
+   •       Map all outputs to common observable channels—for example, deflection at standardized points, load-
+           path response, or normalized nodal reaction signatures.
+A practical first dataset could have several hundred or a few thousand structures, but dataset size should be
+chosen from solver cost and desired uncertainty. The numbers are planning suggestions, not performance claims.
+
+21.2 Define ground truth independently of learning
+For structural design objects A , B , choose a held-out set of loads S t e s t and compute their true simulator
+response-profile distance:
+
+                                                                    1
+                                       D 2A B , o r a c l e =             ∑ ∥ y A ( s ) − y B ( s ) ∥W2 .
+                                                                |S t e s t s ∈ S
+                                                                        )          t est
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                                 20
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+This reference must not be used during training or parameter selection. The proposed metric succeeds only if it
+predicts this independently held-out response relationship better than suitable baselines.
+
+21.3 Experiment groups
+ Group                         Representation                 Distance                     Purpose
+
+                               Raw standardized structural
+ A0                                                           Euclidean                    Naive reference
+                               features
+
+                               Fixed modal or reduced-order                                Tests value of classical
+ A1                                                           Euclidean
+                               features                                                    mechanics reduction
+
+                                                                                           Tests the metric independently
+ A2                            Same reduced features as A1    Reduced stiffness metric
+                                                                                           of features
+
+                                                                                           Controls simple supervised
+ A3                            Same chosen embedding          Trained global Mahalanobis
+                                                                                           reweighting
+
+                                                                                           Tests continuous multiscale
+ A4                            Same graph representation      Fractional spectral metric
+                                                                                           weighting
+
+                               Learned embedding + response                                Tests adaptive behavior-
+ A5                                                           Jacobian pullback metric
+                               model                                                       sensitive geometry
+
+                                                              Direct response-profile      Tests whether local tensor
+ A6                            Same learned response model
+                                                              distance                     construction is necessary
+
+Holding representation, training information, and model capacity fixed wherever possible is vital. Otherwise it may
+be impossible to tell whether improvement comes from geometry, feature extraction, or additional supervision.
+
+
+21.4 The split must prevent near-duplicate leakage
+For a generalization test, separate structure families or topology templates between training, development, and
+final test, or explicitly test both within-topology and out-of-topology conditions. Merely generating multiple load
+cases from the same structure and splitting at the load-case row level can give deceptively strong results when the
+objective is generalization to unseen structures.
+Keep load conditions used to learn the behavioral metric separate from the conditions used in the final response-
+distance oracle. Declare whether the test targets interpolation within an observed load family or extrapolation to a
+new family.
+
+
+21.5 Primary and secondary outcomes
+Preselect one primary outcome, such as Spearman correlation between model distance and independently
+computed oracle response-profile distance over test pairs drawn from held-out structures. Pair dependence must
+be accounted for in inference: pairs sharing a structure are not independent.
+
+Secondary outcomes may include top- k neighbor retrieval precision, prediction of responses for unseen load cases,
+ranking of structures by reliability-related outcomes, runtime, sensitivity to measurement noise, and robustness
+across topology families.
+
+
+A meaningful result must show task relevance. A distance that correlates with simulator response but does not
+improve any downstream decision may still be mathematically interesting, but its engineering value is narrower
+than claimed.
+
+
+22. Experiment B: a clean small dynamic-system demonstration
+Before neural networks, generate linear systems with known ( A ,C ) and calculate W O ( T ) numerically. Draw pairs
+of initial states and simulate their output trajectories. The exact identity
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                        21
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+                                                                         T
+
+                                          Δ x W O ( T ) Δ x=∫ ∥ C e A t Δ x ∥22 d t
+                                                   ⊤
+
+                                                                             0
+
+
+
+must hold to numerical tolerance. Test observability by deleting sensors and showing precisely which directions
+become hard or impossible to distinguish.
+Then introduce mild nonlinearities and compare (i) a fixed linearized Gramian, (ii) a local Jacobian pullback, and (iii)
+direct trajectory-distance integration. Measure the radius over which the local quadratic approximation remains
+accurate. This gives a falsifiable and inspectable demonstration of where the analogy breaks down.
+
+
+23. Experiment C: single-cell perturbation response, a possible cross-domain application
+This research track is related to predicting cellular responses to genetic perturbations. It is scientifically plausible
+but not established by the structural-engineering derivation. It should be isolated from any protected competition
+submission, assessed only under permitted data partitions, and judged against the strongest existing development
+baseline.
+
+23.1 Distinguish the graphs and objects being embedded
+There are two distinct graph constructions, and mixing them causes conceptual mistakes.
+
+Option C1: a control-cell graph. Vertices represent individual control cells. Construct a k -nearest-neighbor graph
+G c e l l from permitted baseline/control-cell expression, using only training-approved preprocessing and
+                                                                                                                       n
+normalization. The expression of gene g across n control cells defines a signal x g ∈ R on that graph. One may
+compute
+
+
+
+                                        d 2α ( g , h ) = ( x g − x h )
+                                                                         ⊤
+                                                                             ( Lαc e l l +ε I ) ( x g − x h ) .
+
+This compares gene expression patterns across the same set of control cells. It does not, by itself, compare the
+causal effect of knocking out those genes. Because different contexts may contain different cells, cross-context
+distances require compatible summaries or alignment; simply subtracting unequal-length cell-signal vectors is
+invalid.
+Option C2: a gene interaction graph. Vertices represent genes. Edges may encode a declared coexpression
+network, pathway relation, curated functional association, or a knowledge graph. A cellular expression vector is
+now a node signal on this gene graph. Spectral or diffusion features can summarize a cell state or give target-gene
+embeddings from a common operator. Edges can be noisy, noncausal, context dependent, and incomplete. Report
+their provenance and justify how unsigned or signed interactions are represented.
+
+
+The distinction between the two options is foundational: cell-graph signals index cells; gene-graph signals index genes.
+The corresponding operators act in different vector spaces.
+
+
+23.2 A conservative first candidate: fixed spectral target features
+Without fitting a new response model, compute a modest fixed-size feature vector for each candidate perturbation
+target p , for instance
+
+                 f p = [ ∥ x p ∥2 , x p L                                                                                  x p ∥2 , … ) ,
+                                    ⊤       0.25        ⊤    0.5             ⊤     0.75          ⊤                −t 1 L
+                                                   xp, xp L xp, xp L                      xp , xp L xp ,∥e
+
+
+with appropriate centering, normalization, and nullspace treatment. These are examples, not a recommended final
+feature set. To control dimension, use a frozen small scale grid and compare against equally sized generic statistics
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                            22
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+or random projections. For broad graphs, computing a small set of matrix-function quadratic forms can be
+preferable to eigendecomposition of the entire operator.
+Add the resulting feature group to an existing predictive baseline, using the same splits, training budget, and
+outcome metrics. Include a no-new-features control and a parameter-count-matched generic-feature control. A
+reproducible incremental improvement would justify developing the more sophisticated behavior-aware geometry.
+
+
+23.3 The more ambitious candidate: perturbation-response metric
+      c      G
+Let Δ p ∈ R be an observed or predicted change in gene expression associated with perturbing target p in
+context c . A training-estimated functional target similarity could be defined through
+
+
+                                                         c
+                                                             [
+                                    D 2 ( p , q ) =E c ∼ π ( Δcp − Δcq ) W c ( Δcp − Δcq ) ) .
+                                                                        ⊤
+
+
+
+
+This is potentially more relevant than baseline coexpression distance because it compares perturbation effects, not
+mere control expression patterns. However, it requires outcome data for the targets being compared. It must not
+incorporate hidden final-test responses or future evaluation labels.
+
+A predictor g ϕ ( z p , c ) could be trained on eligible known perturbations and used to derive a pullback metric on
+target embeddings. For genuinely unseen targets, the geometry inherits uncertainty from the predictor; report
+confidence intervals or uncertainty estimates rather than describing it as an observed causal relationship.
+
+
+23.4 Known related work and what remains to test
+The GEARS framework already uses knowledge-informed graphs and perturbation embeddings to predict gene-
+expression outcomes [R9]. Therefore the broad idea of gene-graph embeddings for perturbation prediction is
+established. The narrower research opportunity here is to determine whether explicit response-aware distance
+and fractional spectral weighting provide incremental, validated benefit over standard graph embeddings,
+physically inspired quadratic penalties, and an existing strong baseline.
+This question is worth asking, but it is not answered by the mechanical analogy or by attractive visualization of
+latent spaces.
+
+
+23.5 Data integrity and competition isolation
+Every experiment must maintain a clear separation between training controls, training perturbation responses,
+development evaluation, and protected final evaluation. Graph fitting, dimensionality reduction, hyperparameter
+selection, and output normalization are part of the fitted pipeline and must obey the declared split.
+In particular: do not incorporate final-test labels into the graph, the target-distance oracle, pair selection, spectral
+scale sweep, early stopping, or metric selection. Preserve the accepted submission and its artifacts untouched.
+Experimental branches should record input hashes, code revision, preprocessing rules, metric definitions, seeds,
+and final decisions.
+
+
+24. Statistical validity, negative controls, and falsification
+A credible result requires more than an improved mean number from one experiment.
+
+24.1 Units of replication
+In structural experiments, the independent unit may be a structure family or independently generated design, not
+every load case or every pair sharing the same design. In cell perturbation studies, many cells can belong to the
+same perturbation group; treating each cell as an independent replication of the perturbation effect causes
+pseudoreplication.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                       23
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+Use paired comparisons on matched held-out units where possible, bootstrap or hierarchical uncertainty intervals
+at the appropriate grouping level, and report variability across independently trained seeds. Model selection must
+be performed without consulting protected final-test results.
+
+
+24.2 Mandatory negative controls
+ Negative or diagnostic control                                      What a failure reveals
+
+                                                                     Improvement may come from dimensionality rather than
+ Shuffle graph node identities while preserving distributions
+                                                                     meaningful topology
+
+                                                                     Benefit may not require the claimed physical or biological
+ Degree-preserving graph rewiring
+                                                                     connections
+
+ Replace structural weights by randomized admissible weights         Claimed stiffness/spectral semantics may be unnecessary
+
+ Permute training-response labels within valid strata                Suspected leakage or evaluation code defect if gains persist
+
+ Compare with trainable global Mahalanobis of equal capacity         Local geometry may add no value beyond reweighting
+
+ Compare against random features of matched dimensionality           Additional feature count may explain the gain
+
+ Vary graph k , scale normalization, and spectral exponent           Detect fragile hyperparameter dependence
+
+ Hold out genuinely new structure families or perturbation targets   Detect memorization of entities seen during training
+
+These controls must be designed to preserve relevant statistical properties where appropriate. A naive random
+shuffle can also change nuisance distributions, so one should not overinterpret any single control.
+
+
+24.3 Suggested decision criteria
+Before running final evaluation, fix:
+   •      the primary outcome and what magnitude of improvement would be practically meaningful;
+   •      the exact held-out groups and grouping unit for confidence intervals;
+   •      acceptable computational and inference costs;
+   •      stability requirements across seeds and contexts;
+   •      the negative controls that must fail to reproduce the claimed benefit;
+   •      the set of allowed hyperparameters and the development-only selection rule.
+Go: a new metric improves the prespecified held-out task over the strongest matched baseline, with a defensible
+uncertainty interval and clean negative controls.
+Investigate: an apparent gain is small, unstable, context-specific, or driven by a single preprocessing choice.
+
+
+Stop: there is no robust advantage, a simpler baseline matches it, or the graph/metric is not empirically identifiable
+from permitted data.
+
+
+A negative result should be published internally with the same care as a positive result; it prevents wasted research
+time.
+
+
+25. Research risks and non-obvious failure modes
+25.1 Units and interpretation
+A metric can inadvertently combine millimeters of deflection, frequency in hertz, and stresses in megapascals.
+Without physical normalization or an explicitly justified utility function, the largest numerical scale dominates. The
+same problem appears with gene counts, probabilities, and effect sizes. Document transformations, weights, and
+units at every stage.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                    24
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+25.2 Nullspaces and identifiability
+A graph Laplacian ignores connected-component constants; some sensors ignore entire mechanical modes; a
+response model may ignore latent directions. Zero distance does not always mean equal physical states. The
+equivalence class must match intended use. Blind ε I regularization can conceal nonidentifiability rather than solve
+it scientifically.
+
+25.3 Uncertainty in operator construction
+A mechanical stiffness matrix may be based on uncertain material properties or boundary conditions. A graph
+inferred from control data may change substantially with preprocessing, sampling density, and batch effects.
+Propagate or at least stress-test those uncertainties rather than treating the operator as ground truth.
+
+25.4 Metric collapse and learned shortcuts
+A trainable encoder can collapse meaningful variation or exploit confounding features. A response predictor can
+learn shortcuts whose Jacobian is numerically smooth but scientifically incorrect. Test on interventions, unseen
+environments, and controlled changes of nuisance variables where possible.
+
+25.5 Out-of-distribution extrapolation
+Jacobian sensitivity describes local movement around observed states. Far outside the training manifold, local
+metric tensors can be unreliable and geodesic paths may travel through unrealistic regions of latent space. A
+geodesic optimization should enforce or penalize low-support regions if such paths are considered physically
+meaningful.
+
+25.6 Computational cost and approximate spectra
+Fractional graph operators may be dense. Jacobian metrics may scale poorly with response dimension. Geodesic
+path optimization is nonconvex and can be sensitive to initialization. If compute overwhelms the benefit, the
+research should favor a simpler fixed metric or response-distance model.
+
+25.7 Incorrect claims of novelty or causality
+Matrix-weighted norms, graph Dirichlet energies, Gramian-based system comparison, spectral fractional powers,
+metric learning, and pullback Riemannian geometry are established. A new contribution must be specified narrowly
+—for example, a particular composite objective, an identified equivalence relation, a provable property under
+assumptions, or a robust benchmark gain. A response-trained representation is not automatically causal.
+
+
+26. A staged program with explicit deliverables
+ Stage                        Question                          Minimum output                     Gate
+
+                              Are the definitions internally    Hand calculations; unit tests;
+ 0. Mathematical checks                                                                            Pass exact identities
+                              consistent?                       PSD/nullspace proofs
+
+                              Does stiffness geometry recover   Two-storey and small truss         Reproduce energies and held-out
+ 1. Structural prototype
+                              known distinctions?               experiments                        response rankings
+
+                              Does observability geometry       Numerical Gramian and trajectory   Identity within numerical
+ 2. Dynamic prototype
+                              match trajectories?               comparisons                        tolerance
+
+                              Is the new geometry better than   Matched ablation table;            Prespecified improvement over
+ 3. Metric comparison
+                              easy baselines?                   uncertainty estimates              strongest baseline
+
+                              Do continuous spectral scales     Alpha/filter sweep, spectral       Robust improvement, not
+ 4. Fractional extension
+                              help?                             diagnostics, negative controls     hyperparameter luck
+
+                              Are fixed graph features useful   Independent, isolated              Incremental value over existing
+ 5. Biological pilot
+                              for perturbations?                development result                 strong predictor
+
+                              Does local response sensitivity   Jacobian/response study with       Gain exceeds complexity and
+ 6. Learned behavior metric
+                              add value?                        clean target holdouts              validity risks
+
+Recommended starting point: Stages 0 and 1, followed by Stage 2. These require no speculative biology or neural
+architecture and give immediate mathematical falsification opportunities. Proceed to more expensive learned
+geometry only after the definitions and baseline comparisons are stable.
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                                 25
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+27. What would count as a scientific contribution?
+A paper or research artifact would need a narrower, defensible claim than “embeddings can use stiffness-like
+matrices,” because that mathematical pattern is known.
+Promising contribution types include:
+
+
+C1. Theory. Prove an equivalence or approximation bound between a constrained physical-response distance and a
+learned low-dimensional metric for a defined model class.
+
+
+C2. Method. Construct a scalable combined graph-response metric with mathematically valid positivity and a
+principled treatment of nullspaces, normalization, and uncertainty.
+
+
+C3. Empirical science. Show that a fixed fractional-spectral feature group captures held-out intervention behavior
+not explained by conventional spectral embeddings, graph neural networks, or a strong predictive baseline.
+
+
+C4. Interpretability. Show that dominant eigenvectors of the learned metric correspond to independently verified
+mechanical or biological response mechanisms rather than merely visually plausible axes.
+
+
+C5. Robustness. Demonstrate that the metric tracks relevant behavior under changing load distributions, sensor
+availability, graph uncertainty, and dataset shifts more reliably than simpler distances.
+
+
+The first research report should state which one of these it is targeting, what existing literature is closest, and
+which failure result would refute the targeted claim.
+
+
+
+Part VI — A rigorous practical starting specification
+28. Proposed v0.1 experiment contract
+Working title: Energy and response-informed metric learning on constrained spring networks.
+System: Scalar spring networks and two-dimensional stable trusses with explicit constraints, common observable
+channels, and independently generated stiffness variations.
+
+
+Inputs: Permitted geometry, connectivity, stiffness parameters, support conditions, and a predefined training load
+distribution.
+
+
+Outputs: Static displacement signatures under test loads; optional modal frequencies or sensor time series in the
+dynamics extension.
+
+
+Representations: Raw standardized features; fixed modal features; supervised embedding with fixed dimension d .
+
+
+Distances: Euclidean; global Mahalanobis; reduced stiffness; direct response-profile distance; local response-
+Jacobian metric; optional normalized fractional graph operator.
+
+
+Primary evaluation: Held-out agreement with simulator-defined response distances for genuinely unseen
+structures and test load cases, using group-aware uncertainty estimates.
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                      26
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+Implementation constraints: Explicit units; verified symmetric operators; positive-definiteness or declared quotient
+spaces; no exposure of final-test outcomes; deterministic seed-controlled generation; finite-difference checks of
+derivatives; runtime/memory logging.
+
+
+Falsification: If the global Mahalanobis baseline matches the local metric after matching supervision and capacity,
+do not claim that curvature is necessary. If graph shuffling leaves the improvement unchanged, do not claim that
+the recovered structure is meaningful. If a predictor fails on unseen loads, do not trust its Jacobian-derived
+geometry.
+
+
+28.1 Suggested source layout
+  behavioral-geometry-research/
+    README.md
+    configs/
+      spring_v01.yaml
+      structure_splits_v01.yaml
+    src/
+      mechanics.py
+      graph_operators.py
+      response_distance.py
+      metric_tensors.py
+      spectral_filters.py
+      evaluation.py
+    tests/
+      test_stiffness_energy.py
+      test_laplacian_nullspace.py
+      test_fractional_psd.py
+      test_observability.py
+      test_jacobian_pullback.py
+      test_split_integrity.py
+    experiments/
+      exp00_math_identity.py
+      exp01_structural_baselines.py
+      exp02_dynamic_observability.py
+      exp03_fractional_ablation.py
+    reports/
+      exp00/
+      exp01/
+      decisions.md
+    manifests/
+      split_hashes.json
+      operator_provenance.json
+This layout deliberately separates scientific claims, operator construction, experiments, and evidence. It should be
+small enough to implement quickly and rigorous enough to extend without mixing exploratory and protected
+results.
+
+
+29. Interpretation of results: three possible outcomes
+Outcome A: structural distances work, but learned metrics add little. That would validate the physical intuition
+while showing that additional neural complexity is unnecessary for this problem class.
+Outcome B: learned response metrics improve held-out behavior prediction. That would support the idea that
+scientifically chosen response geometry contributes beyond coordinate compression and global reweighting,
+especially if the effect survives negative controls and new load families.
+
+
+Outcome C: fractional features help only on selected contexts. This would suggest conditional multiscale
+structure. The appropriate follow-up would be to identify the context differences, repeat the result independently,
+and assess whether scale choices can be predicted from training-only information.
+
+
+Each outcome advances knowledge. A research design that can only declare success is not a credible test.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                 27
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+30. Final synthesis
+The most useful insight is not the observation that mechanics and AI both use matrices. It is a change in the
+definition of similarity.
+An ordinary embedding answers: “Which objects have nearby coordinates in the learned representation?”
+
+
+A physics-aware embedding asks: “Which differences are energetically important under the governing model?”
+
+
+A behavior-aware embedding asks: “Which differences cause measurably different outputs under the conditions
+that matter?”
+
+
+An intervention-aware representation asks: “Which differences persist when the system is actively changed?”
+
+
+A transition-cost representation asks: “How hard is it to move from one state to another?”
+
+
+These are not interchangeable questions. Their mathematically appropriate operators include stiffness matrices,
+graph Laplacians, observability Gramians, Jacobian pullback tensors, information metrics, and control costs.
+
+
+The unifying proposal is to choose a scientifically meaningful response space first, derive or estimate its geometry
+second, and only then learn latent coordinates that respect it. The mathematical construction is credible; its
+practical benefit must be established one application and one clean experiment at a time.
+
+
+
+Appendix A — Mathematical details and proofs
+A.1 Proof that a positive-definite quadratic form defines a norm
+Let M =M ⊤ ≻ 0 . By the spectral theorem, M =Q Λ Q ⊤ with positive eigenvalues. Define M 1/2 =Q Λ 1/2 Q ⊤.
+Then
+
+                                          ∥ v ∥ M = √ v ⊤ M v=∥ M 1/2 v ∥2 .
+
+
+Because M 1/2 is invertible, the quantity is zero if and only if v=0 . Homogeneity and the triangle inequality follow
+immediately from the Euclidean norm. Therefore d M ( x , y ) =∥ x − y ∥ M is a metric. If M is only semidefinite, the
+same construction gives a seminorm and a pseudometric, because M 1/2 may have a nontrivial nullspace.
+
+
+A.2 Derivation of the two-storey shear stiffness matrix
+For a fixed base and two lateral floor coordinates, set the spring extensions to
+
+
+                                             e=
+                                                  [ )[
+                                                     u1
+                                                   u2 − u1
+                                                           =
+                                                              1 0 u1
+                                                             − 1 1 u2
+                                                                     ¿
+                                                                      .      )[ )
+                                ⊤
+The stored energy is U =1/2 e       diag ( k 1 , k 2 ) e . Consequently,
+
+                                     K =B ⊤
+                                          s diag ( k 1 , k 2 ) B s =
+                                                                       [   k 1 +k 2 − k 2
+                                                                            − k2     k2  ).
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                 28
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+For k 1 =k 2 =1, the eigenvalues are ( 3 − √ 5 ) /2 ≈ 0.382 and ( 3+ √ 5 ) /2 ≈ 2.618 . Both are positive, because the
+base is fixed. Without the base support the assembled free-spring system would retain a rigid-translation nullspace.
+
+
+A.3 Derivation of observability as a quadratic form
+For Δ x 0 =x a − x b under common zero or identical inputs,
+                              T                             T
+
+                              ∫ ∥ Δ y (t ) ∥ d t2
+                                                2        ¿ ∫ (C e A t Δ x 0 )⊤ ( C e A t Δ x 0 ) d t
+                               0                            0
+
+
+
+                                                                    (                          )
+                                                                        T
+
+                                                                    ∫ e A t C⊤ C e A t d t Δ x0 .
+                                                                            ⊤
+                                                                ⊤
+                                       ¿                 ¿Δx    0
+                                                                        0
+
+
+
+
+This establishes the Gramian identity. The Gramian is positive semidefinite because it integrates positive-
+semidefinite matrices. Positive definiteness is the relevant observability condition for the chosen horizon, assuming
+ordinary finite-dimensional continuous-time system regularity.
+
+
+A.4 Why Jacobian pullback produces a quadratic form
+For fixed s and differentiable g , expand about z :
+
+                                                    Δ y=J g δ +O ( ∥ δ ∥2 ) .
+
+
+Then
+
+                                                       g W J g δ +O ( ∥ δ ∥ )
+                                     Δ y ⊤ W Δ y=δ ⊤ J ⊤                   3
+
+
+
+
+under sufficient smoothness and boundedness. Averaging over fixed π ( s ) and holding W appropriately controlled
+produces M B ( z ). The tensor is positive semidefinite because for every vector v ,
+
+                                               v ⊤ M B v=E s ∥ J g v ∥W2 ≥ 0 .
+
+
+It is positive definite when there is no nonzero v that lies in the relevant weighted Jacobian nullspace for almost
+every sampled condition. This may be stated as a local distinguishability requirement.
+
+
+A.5 Direct output distance versus path distance
+The global response-profile distance can be defined without a latent path:
+
+                                           D o u t p u t ( a , b ) =∥ g ( a ) − g ( b ) ∥W .
+
+                         ⊤
+A local pullback metric J g W J g instead measures lengths of image curves g ( γ ( t ) ) as latent paths γ move
+between a and b . A shortest admissible image curve need not be the straight chord between outputs. Thus the
+geodesic distance on the latent manifold can be greater than or equal to the direct weighted output chord length,
+and may behave differently when the response map is noninjective or the image is curved. The two quantities
+answer related but nonidentical questions.
+
+
+A.6 Graph fractional-power caveats
+For L ≽ 0 , Lα is well defined by spectral calculus for α >0 and remains positive semidefinite. Its nullspace equals
+that of L. The case α=0 needs an explicit convention for the zero eigenvalues; one must not silently equate the
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                   29
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+                                    α
+right-sided limit to I . For ( L+ε I ) , by contrast, all eigenvalues become strictly positive before exponentiation,
+giving a full-rank operator for ε >0 .
+
+Adding ε I after fractional exponentiation and adding it before exponentiation are not the same operation:
+
+
+                                                                        α
+                                                  Lα +ε I ≠ ( L+ε I )
+
+
+in general. Both can be legitimate, but they define different spectra and require separate reporting.
+
+
+
+Appendix B — Implementation pseudocode and executable
+checks
+B.1 Small-matrix stiffness distance
+  import numpy as np
+
+  K = np.array([[2.0, -1.0], [-1.0, 1.0]])
+  a = np.array([1.0, 1.0])
+  b = np.array([1.0, -1.0])
+
+  def energy_distance(x, y, K):
+      delta = x - y
+      return np.sqrt(delta @ K @ delta)
+
+  assert np.isclose(energy_distance(a, np.zeros(2), K), 1.0)
+  assert np.isclose(energy_distance(b, np.zeros(2), K), np.sqrt(5))
+  assert np.isclose(energy_distance(a, b, K), 2.0)
+
+
+B.2 Small-matrix fractional Laplacian
+  import numpy as np
+
+  def fractional_laplacian(L, alpha):
+      eigvals, Q = np.linalg.eigh(L)
+      if np.min(eigvals) < -1e-10:
+          raise ValueError("Not positive semidefinite")
+      eigvals = np.clip(eigvals, 0.0, None)
+      return (Q * eigvals**alpha) @ Q.T
+
+  B = np.array([[1., -1., 0.], [0., 1., -1.]])
+  L = B.T @ B
+  for alpha in (0.25, 0.5, 0.75, 1.0):
+      La = fractional_laplacian(L, alpha)
+      assert np.linalg.eigvalsh(La).min() > -1e-9
+      assert np.allclose(La @ np.ones(3), np.zeros(3), atol=1e-9)
+These exact routines are appropriate for tiny demonstration matrices only. The main text explains why sparse
+matrix-function approximations are needed at scale.
+
+
+B.3 Verify a Jacobian pullback without training a neural network
+  import numpy as np
+
+  J = np.array([[1.0, 0.2], [0.0, 3.0]])
+  W = np.diag([1.0, 0.25])
+  M = J.T @ W @ J
+
+  delta = np.array([0.0, 0.5])
+  latent_quadratic = delta @ M @ delta
+  output_quadratic = (J @ delta) @ W @ (J @ delta)
+  assert np.isclose(latent_quadratic, output_quadratic)
+  assert np.isclose(latent_quadratic, 0.5725)
+
+
+B.4 Independent executable supplement
+The accompanying file behavioral_metric_demo.py contains complete, NumPy-only tests for:
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                    30
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+   1.    The two-storey stiffness example, including pairwise distance.
+   2.    The exact B ⊤ B graph energy and the nullspace under fractional powers.
+   3.    An analytically soluble finite-horizon observability Gramian, checked against time-integrated output
+         trajectories.
+   4.    The Jacobian pullback identity for the numerical two-dimensional example.
+   5.    Expected response-profile distance for two structures under Gaussian load distributions, checked by
+         Monte Carlo simulation.
+Run with Python and NumPy:
+   python -m pip install numpy
+   python behavioral_metric_demo.py
+Every assertion should pass. Passing those mathematical tests validates the examples, not the claim that a novel
+learned metric improves a real dataset.
+
+
+
+Appendix C — Glossary and terminology
+ Term                                                      Precise meaning in this monograph
+
+                                                           A map from complex observations to coordinates in a
+ Embedding
+                                                           representation space
+
+ Energy norm                                               Norm induced by a positive-definite quadratic energy operator
+
+                                                           Symmetric positive-semidefinite operator encoding weighted
+ Graph Laplacian
+                                                           differences across an undirected graph
+
+ Spectral component                                        Projection onto an eigenvector of a chosen operator
+
+                                                           Operator obtained by applying a real exponent to nonnegative
+ Fractional power
+                                                           eigenvalues
+
+                                                           Quadratic metric with a global weighting matrix, often inverse
+ Mahalanobis distance
+                                                           covariance
+
+                                                           Agreement of relevant outputs under a declared condition family
+ Behavioral equivalence
+                                                           and tolerance
+
+                                                           Distance-like quantity allowing different objects to have zero
+ Pseudometric
+                                                           separation
+
+                                                           Operator integrating how initial-state differences affect measured
+ Observability Gramian
+                                                           outputs over time
+
+                                                           Operator characterizing how inputs reach state directions and
+ Controllability Gramian
+                                                           their energy cost
+
+                                                           Transfer of an output-space metric into input or latent
+ Jacobian pullback                                                            ⊤
+                                                           coordinates by J       WJ
+ Riemannian metric                                         Smooth positive-definite local inner product on tangent directions
+
+                                                           Locally length-minimizing path in a metric geometry; global
+ Geodesic
+                                                           shortest path when minimized appropriately
+
+                                                           Local quadratic geometry of changes between parameterized
+ Fisher information metric
+                                                           probability distributions
+
+                                                           A defined manipulation of a system, stronger than simply
+ Intervention
+                                                           observing a covariate value
+
+                                                           Representation that captures information at more than one
+ Multiscale representation
+                                                           specified scale
+
+                                                           Empirical evidence of robust scaling behavior over a defensible
+ Fractal evidence
+                                                           scale range; not merely fractional notation
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                            31
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+
+Appendix D — Verified selected references and adjacent work
+The following sources establish the scientific backdrop; they do not directly validate the composite method
+proposed in this document. References are included at the point of use with identifiers in square brackets.
+[R1] Shuman, D. I., Narang, S. K., Frossard, P., Ortega, A., & Vandergheynst, P. (2013). The Emerging Field of Signal
+Processing on Graphs: Extending High-Dimensional Data Analysis to Networks and Other Irregular Domains. IEEE Signal
+Processing Magazine, 30(3), 83–98. DOI: 10.1109/MSP.2012.2235192. Established overview of graph spectral
+operators, smoothness, filters, and multiscale signal analysis.
+
+
+[R2] Belkin, M., & Niyogi, P. (2003). Laplacian Eigenmaps for Dimensionality Reduction and Data Representation.
+Neural Computation, 15(6), 1373–1396. DOI: 10.1162/089976603321780317. Classic spectral approach to
+geometry-aware dimensionality reduction.
+
+
+[R3] Coifman, R. R., & Lafon, S. (2006). Diffusion Maps. Applied and Computational Harmonic Analysis, 21(1), 5–30.
+DOI: 10.1016/j.acha.2006.04.006. Multiscale diffusion distances and intrinsic geometry of data.
+
+
+[R4] Coifman, R. R., & Maggioni, M. (2006). Diffusion Wavelets. Applied and Computational Harmonic Analysis,
+21(1), 53–94. DOI: 10.1016/j.acha.2006.04.004. Multiresolution analysis derived from diffusion operators.
+
+
+[R5] Arvanitidis, G., Hansen, L. K., & Hauberg, S. (2018). Latent Space Oddity: On the Curvature of Deep Generative
+Models. International Conference on Learning Representations. Preprint. Jacobian-related Riemannian geometry of
+nonlinear latent representations.
+
+
+[R6] Arvanitidis, G., Hauberg, S., & Schölkopf, B. (2021). Geometrically Enriched Latent Spaces. Proceedings of
+AISTATS, PMLR 130, 631–639. PMLR paper. Incorporating chosen ambient geometry into learned latent
+geometry.
+
+
+[R7] Zhang, A., McAllister, R., Calandra, R., Gal, Y., & Levine, S. (2021). Learning Invariant Representations for
+Reinforcement Learning without Reconstruction. International Conference on Learning Representations.
+arXiv:2006.10742. Behaviorally grounded distances through bisimulation-style representation learning.
+
+
+[R8] Riascos, A. P., & Mateos, J. L. (2014). Fractional Dynamics on Networks: Emergence of Anomalous Diffusion and
+Lévy Flights. Physical Review E, 90, 032809. DOI: 10.1103/PhysRevE.90.032809. Fractional graph Laplacians and
+nonlocal diffusion processes.
+
+
+[R9] Roohani, Y., Huang, K., & Leskovec, J. (published online 2023; journal volume 2024). Predicting Transcriptional
+Outcomes of Novel Multigene Perturbations with GEARS. Nature Biotechnology, 42, 927–935. DOI:
+10.1038/s41587-023-01905-6. Established graph-enhanced embeddings for single-cell perturbation prediction.
+
+
+[R10] MathWorks. Controllability and Observability Gramians, Control System Toolbox documentation. Reference.
+Formal definitions and conditions for classical infinite-horizon Gramians; finite-horizon expressions are direct finite-
+time analogues.
+
+
+[R11] Amari, S. (1998). Natural Gradient Works Efficiently in Learning. Neural Computation, 10(2), 251–276. DOI:
+10.1162/089976698300017746. Foundational information-geometric approach to parameter-space metrics and
+natural gradients; for a concise explanation of the local KL expansion see Princeton University: Fisher information.
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                     32
+BEHAVIORAL GEOMETRY / STRUCTURAL MECHANICS × REPRESENTATION LEARNING
+
+
+
+[R12] Nadler, B., Lafon, S., Coifman, R. R., & Kevrekidis, I. G. (2006). Diffusion Maps, Spectral Clustering and Reaction
+Coordinates of Dynamical Systems. Applied and Computational Harmonic Analysis, 21(1), 113–127. DOI:
+10.1016/j.acha.2005.07.004. Connects low-dimensional coordinates to dynamical-system descriptions.
+
+
+Literature positioning in one paragraph
+What is already well established: quadratic energy norms in finite elements; spectral graph operators; Gramian-
+based dynamic-system analyses; geometric metric learning; pullback metrics of neural mappings; fractional
+Laplacians; and graph-based single-cell perturbation modeling. What remains proposed here: an explicit,
+experimentally validated workflow combining selected structural operators, response-informed geometry,
+fractionally weighted spectral content, and intervention-aware validation in a specific domain. A publishable
+novelty claim would require a formal comparison with the closest prior methods and independent results; it cannot
+be inferred from combining their vocabulary.
+
+
+End of research monograph · Version 1.0
+
+
+
+
+RESEARCH MONOGRAPH · 23 OCT 2026                                                                                     33
+
